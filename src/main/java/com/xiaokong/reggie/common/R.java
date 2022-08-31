@@ -2,6 +2,7 @@ package com.xiaokong.reggie.common;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +14,9 @@ import java.util.Map;
  * Version 1.0
  */
 @Data
-public class R<T> {
+public class R<T> implements Serializable {
+
+
     private Integer code;
     private String msg;
     private T data;
@@ -36,6 +39,10 @@ public class R<T> {
     public R<T> add(String key, Object value) {
         this.map.put(key, value);
         return this;
+    }
+
+    public Integer getCode() {
+        return code;
     }
 
 }

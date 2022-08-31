@@ -8,6 +8,8 @@ import com.xiaokong.reggie.pojo.Employee;
 import com.xiaokong.reggie.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,6 +90,7 @@ public class EmployeeController {
         return R.success("新增员工成功");
     }
 
+    @Cacheable(cacheNames = "employeeCache", key = "'employee-getBypage-'+#page")
     @GetMapping("/page")
     public R<Page<Employee>> getByPage(int page, int pageSize, String name) {
         // 构造分页构造器
@@ -121,6 +124,7 @@ public class EmployeeController {
      * @return: com.xiaokong.reggie.common.R<java.lang.String>
      **/
     @PutMapping
+    @CacheEvict(cacheNames = "employeeCache", beforeInvocation = true)
     public R<String> updateById(HttpServletRequest request, @RequestBody Employee employee) {
         if (employee.getId() == 1L && employee.getStatus() == 0) {
             return R.error("您没有这个权限!");

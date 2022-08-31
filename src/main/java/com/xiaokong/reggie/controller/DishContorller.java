@@ -1,5 +1,6 @@
 package com.xiaokong.reggie.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,9 +14,13 @@ import com.xiaokong.reggie.service.DishFlavorService;
 import com.xiaokong.reggie.service.DishService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -37,8 +42,19 @@ public class DishContorller {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     @GetMapping("/page")
     public R<Page<DishDto>> getByPage(int page, int pageSize, String name) {
+
+        String pagess = redisTemplate.opsForValue().get("getByPage-page" + page);
+        if (pagess != null) {
+            System.out.println("成功从redis获取");
+            Page<DishDto> result = JSON.parseObject(pagess, Page.class);
+            return R.success(result);
+        }
+
         Page<Dish> pageInfo = new Page<>(page, pageSize);
         Page<DishDto> dishDtoPage = new Page<>();
 
@@ -62,12 +78,16 @@ public class DishContorller {
             return dishDto;
         }).collect(Collectors.toList());
         dishDtoPage.setRecords(dishDtos);
-
+        redisTemplate.opsForValue().set("getByPage-page" + page, JSON.toJSONString(dishDtoPage), 300, TimeUnit.SECONDS);
         return R.success(dishDtoPage);
     }
 
     @PostMapping
     public R<String> save(@RequestBody DishDto dishDto) {
+        Set<String> keys = redisTemplate.keys("getByPage-*");
+        if (keys != null) {
+            redisTemplate.delete(keys);
+        }
         dishService.saveWithFlavor(dishDto);
         return R.success("添加成功");
     }
@@ -80,6 +100,10 @@ public class DishContorller {
 
     @PostMapping("/status/{status}")
     public R<String> updateStatusById(@PathVariable Integer status, Long[] ids) {
+        Set<String> keys = redisTemplate.keys("getByPage-*");
+        if (keys != null) {
+            redisTemplate.delete(keys);
+        }
         for (Long id : ids) {
             Dish dish = new Dish();
             dish.setId(id);
@@ -91,12 +115,21 @@ public class DishContorller {
 
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto) {
+        Set<String> keys = redisTemplate.keys("getByPage-*");
+        if (keys != null) {
+            redisTemplate.delete(keys);
+            System.out.println("删除了redis中的缓存");
+        }
         dishService.updateWithFlavor(dishDto);
         return R.success("修改成功");
     }
 
     @DeleteMapping
     public R<String> deleteByIds(Long[] ids) {
+        Set<String> keys = redisTemplate.keys("getByPage-*");
+        if (keys != null) {
+            redisTemplate.delete(keys);
+        }
         for (Long id : ids) {
             LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper<>();
             lqw.eq(id != null, DishFlavor::getDishId, id);

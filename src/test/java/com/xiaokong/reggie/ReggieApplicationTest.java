@@ -2,22 +2,26 @@ package com.xiaokong.reggie;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.fastjson.serializer.PropertyFilter;
-import com.alibaba.fastjson.serializer.SerializerFeature;
-import lombok.Data;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 
 @SpringBootTest
 class ReggieApplicationTest {
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     @Test
     public void tesss() {
-        Student student = new Student(new Date());
-        String s = JSON.toJSONString(student);
-        System.out.println(s);
+        ArrayList<Integer> nums = new ArrayList<>(Arrays.asList(1, 2, 3, 45));
+        String s = JSON.toJSONString(nums);
+        System.out.println(redisTemplate.opsForValue().get("xiaokong111")); // null
     }
 }
 

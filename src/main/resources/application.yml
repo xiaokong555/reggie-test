@@ -11,6 +11,9 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/reggie?useSSL=false
     username: root
     password: 123456
+  redis:
+    host: 127.0.0.1
+    port: 6379
 
 mybatis-plus:
   configuration:
@@ -22,4 +25,3 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: assign_id
-
